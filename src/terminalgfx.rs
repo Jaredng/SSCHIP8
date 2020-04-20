@@ -1,25 +1,26 @@
+#![allow(dead_code)]
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
 use crate::chip8gfx;
 
-pub struct builder {
+pub struct Tgfx {
 
 }
 
-impl chip8gfx::Init for builder {
-    fn init() -> Box<dyn chip8gfx::Interface> {
-        return Box::new(tgfx{});
+impl Tgfx {
+    pub fn init() -> Box<Tgfx> {
+        return Box::new(Tgfx{});
     }
 }
 
-pub struct tgfx {
-
-}
-
-impl chip8gfx::Interface for tgfx {
-    fn draw_sprite(&self, x:u8, y:u8, sprite:&[u8]){
-        
+impl chip8gfx::Interface for Tgfx {
+    fn draw_sprite(&self, x:u8, y:u8, sprite:&[u8]) -> u8 {
+        return 0x00
     }
 
     fn clear_screen(&self) {
-        
+
     }
 }

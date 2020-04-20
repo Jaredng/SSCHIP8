@@ -1,9 +1,16 @@
-use crate::chip8gfx::Init;
+//Snake case really doesn't make sense for how I'm naming processor functions.
+#![allow(non_snake_case)]
+
 use std::env;
 use std::time::{Duration, Instant};
+use std::fs::File;
+use std::io::prelude::*;
+use std::error::Error;
 
 mod chip8gfx;
 mod terminalgfx;
+mod chip8kb;
+mod terminalkb;
 
 extern crate rand;
 
@@ -43,7 +50,9 @@ pub struct CHIP8cpu{
     // current instruction in nibs
     pub ins: [u8; 4],
     //TODO: Add video & audio interfaces
-    pub gfx: Box<dyn chip8gfx::Interface>
+    pub gfx: Box<dyn chip8gfx::Interface>,
+    //Keyboard interface
+    pub kb: Box<dyn chip8kb::Interface>
 }
 
 impl CHIP8cpu {
@@ -290,19 +299,24 @@ impl CHIP8cpu {
     // Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
     // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
     fn iDXYN(&mut self){
-        self.gfx.draw_sprite(self.ins[1],self.ins[2], &self.memory[self.i as usize .. self.i as usize + self.ins[3] as usize]);
+        self.v[0xF] = self.gfx.draw_sprite(self.ins[1],self.ins[2], 
+                        &self.memory[self.i as usize .. self.i as usize + self.ins[3] as usize]);
     }
 
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is pressed
     fn iEX9E(&mut self){
-        
+        if self.kb.check_pressed(self.v[self.ins[1] as usize]) {
+            self.pc += 2;
+        }
     }
 
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is not pressed
     fn iEXA1(&mut self){
-        
+        if !self.kb.check_pressed(self.v[self.ins[1] as usize]) {
+            self.pc += 2;
+        }
     }
 
     // Store the current value of the delay timer in register VX
@@ -312,7 +326,7 @@ impl CHIP8cpu {
 
     // Wait for a keypress and store the result in register VX
     fn iFX0A(&mut self){
-        
+        self.v[self.ins[1] as usize] = self.kb.get_keypress();
     }
 
     //Set the delay timer to the value of register VX
@@ -377,6 +391,10 @@ fn main() {
     // do general CPU init
     //TODO: Initialize hex sprites
 
+    //Make init structure branch when time for SDL implementation
+    let graphics = terminalgfx::Tgfx::init();
+    let keyboard = terminalkb::Tkb::init();
+
     let mut cpu = CHIP8cpu {
         i: 0x0,
         pc: 0x200,
@@ -388,10 +406,16 @@ fn main() {
         st: 0,
         clock: clockspeed,
         ins: [0x0; 4],
-        gfx: terminalgfx::builder::init()
+        gfx: graphics,
+        kb: keyboard
     };
 
-    // initialize rom to memory address $200
+    // initialize rom from memory address $200
+
+    let mut rom =  match File::open(&args[0]) {
+        Err(why) => panic!("couldn't open {}: {}", &args[0], why),
+        Ok(file) => file,
+    };
 
     // main program loop
     let mut cont = true;
