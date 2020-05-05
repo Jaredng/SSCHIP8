@@ -1,0 +1,66 @@
+#![allow(dead_code)]
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+use crate::chip8kb;
+
+pub struct Tkb {
+    pub k1 : char,
+    pub k2 : char,
+    pub k3 : char,
+    pub kC : char,
+    pub k4 : char,
+    pub k5 : char,
+    pub k6 : char,
+    pub kD : char,
+    pub k7 : char,
+    pub k8 : char,
+    pub k9 : char,
+    pub kE : char,
+    pub kA : char,
+    pub k0 : char,
+    pub kB : char,
+    pub kF : char,
+    pub win: *mut WINDOW
+}
+
+impl chip8kb::Interface for Tkb {
+        //Return true if given key is down when function called. False otherwise.
+        fn check_pressed(&self, key: u8) -> bool{
+            return false;
+        }
+
+        //Wait for the next keypress, then return its key ID
+        fn get_keypress(&self) -> u8{
+            return 0x00;
+        }
+}
+
+impl Tkb {
+    pub fn init(win: *mut WINDOW) -> Tkb {
+        let (k1,k2,k3,kC,k4,k5,k6,kD,k7,k8,k9,kE,kA,k0,kB,kF) =
+        ('1','2','3','4','q','w','e','r','a','s','d','f','z','x','c','v');
+        let keyboard = Tkb{
+            k1 : '1',
+            k2 : '2',
+            k3 : '3',
+            kC : '4',
+            k4 : 'q',
+            k5 : 'w',
+            k6 : 'e',
+            kD : 'r',
+            k7 : 'a',
+            k8 : 's',
+            k9 : 'd',
+            kE : 'f',
+            kA : 'z',
+            k0 : 'x',
+            kB : 'c',
+            kF : 'v',
+            win: win
+        };
+        return keyboard;
+    }
+}
+

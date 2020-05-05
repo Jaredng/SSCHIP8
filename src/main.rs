@@ -1,20 +1,24 @@
 //Snake case really doesn't make sense for how I'm naming processor functions.
 #![allow(non_snake_case)]
 
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::process::exit;
 use std::env;
 use std::time::{Duration, Instant};
 use std::fs::File;
+use std::fs;
 use std::io::prelude::*;
 use std::error::Error;
 
 mod chip8gfx;
-mod terminalgfx;
 mod chip8kb;
-mod terminalkb;
+mod terminalinterface;
 
 extern crate rand;
 
-static CLOCK_DEFAULT: u64 = 500;
+const CLOCK_DEFAULT: u64 = 500;
 
 macro_rules! nibs_to_addr {
     ($hi:expr, $mid:expr, $lo:expr) => {
@@ -49,14 +53,10 @@ pub struct CHIP8cpu{
     pub clock: u64,
     // current instruction in nibs
     pub ins: [u8; 4],
-    //TODO: Add video & audio interfaces
-    pub gfx: Box<dyn chip8gfx::Interface>,
-    //Keyboard interface
-    pub kb: Box<dyn chip8kb::Interface>
 }
 
 impl CHIP8cpu {
-    fn cycle(&mut self) -> bool {
+    fn cycle(&mut self, gfx: &mut dyn chip8gfx::Interface, kb: &dyn chip8kb::Interface) -> bool {
         self.ticktimers();
         //TODO: Implement timer decrements
         self.ins[0] = (self.memory[self.pc as usize] >> 4) & 0xF;
@@ -69,7 +69,7 @@ impl CHIP8cpu {
         match self.ins[0] {
             0x0 => match self.ins[1] {
                 0x0 => match self.ins[3] {
-                    0x0 => self.i00E0(),
+                    0x0 => self.i00E0(gfx),
                     0xE => self.i00EE(),
                     _ => self.instr_panic()
                 }
@@ -98,16 +98,16 @@ impl CHIP8cpu {
             0xA => self.iANNN(),
             0xB => self.iBNNN(),
             0xC => self.iCXNN(),
-            0xD => self.iDXYN(),
+            0xD => self.iDXYN(gfx),
             0xE => match self.ins[3] {
-                0xE => self.iEX9E(),
-                0x1 => self.iEXA1(),
+                0xE => self.iEX9E(kb),
+                0x1 => self.iEXA1(kb),
                 _ => self.instr_panic()
             }
             0xF => match self.ins[2] {
                 0x0 => match self.ins[3]{
                     0x7 => self.iFX07(),
-                    0xA => self.iFX0A(),
+                    0xA => self.iFX0A(kb),
                     _ => self.instr_panic()
                 }
                 0x1 => match self.ins[3]{
@@ -138,8 +138,8 @@ impl CHIP8cpu {
     }
 
     //Clear screen
-    fn i00E0(&mut self){
-        self.gfx.clear_screen();
+    fn i00E0(&mut self, gfx: &mut dyn chip8gfx::Interface){
+        gfx.clear_screen();
     }
 
     //Return from subroutine
@@ -298,23 +298,23 @@ impl CHIP8cpu {
 
     // Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
     // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
-    fn iDXYN(&mut self){
-        self.v[0xF] = self.gfx.draw_sprite(self.ins[1],self.ins[2], 
+    fn iDXYN(&mut self, gfx: &mut dyn chip8gfx::Interface){
+        self.v[0xF] = gfx.draw_sprite(self.v[self.ins[1] as usize],self.v[self.ins[2] as usize], 
                         &self.memory[self.i as usize .. self.i as usize + self.ins[3] as usize]);
     }
 
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is pressed
-    fn iEX9E(&mut self){
-        if self.kb.check_pressed(self.v[self.ins[1] as usize]) {
+    fn iEX9E(&mut self, kb: &dyn chip8kb::Interface){
+        if kb.check_pressed(self.v[self.ins[1] as usize]) {
             self.pc += 2;
         }
     }
 
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is not pressed
-    fn iEXA1(&mut self){
-        if !self.kb.check_pressed(self.v[self.ins[1] as usize]) {
+    fn iEXA1(&mut self, kb: &dyn chip8kb::Interface){
+        if !kb.check_pressed(self.v[self.ins[1] as usize]) {
             self.pc += 2;
         }
     }
@@ -325,8 +325,8 @@ impl CHIP8cpu {
     }
 
     // Wait for a keypress and store the result in register VX
-    fn iFX0A(&mut self){
-        self.v[self.ins[1] as usize] = self.kb.get_keypress();
+    fn iFX0A(&mut self, kb: &dyn chip8kb::Interface){
+        self.v[self.ins[1] as usize] = kb.get_keypress();
     }
 
     //Set the delay timer to the value of register VX
@@ -390,10 +390,22 @@ fn main() {
 
     // do general CPU init
     //TODO: Initialize hex sprites
+    if args.len() < 2 { 
+        println!("Missing rom file!");
+        exit(6);
+    }
+    let metadata = fs::metadata(&args[1]).unwrap();
+    if metadata.len() > 3584 || metadata.len() < 1 {
+        println!("File size issue!");
+        exit(6);
+    }
+    let mut romfil =  match File::open(&args[1]) {
+        Err(why) => panic!("couldn't open {}: {}", &args[1], why),
+        Ok(file) => file,
+    };
 
     //Make init structure branch when time for SDL implementation
-    let graphics = terminalgfx::Tgfx::init();
-    let keyboard = terminalkb::Tkb::init();
+    let (mut keyboard, mut graphics) = terminalinterface::termfact();
 
     let mut cpu = CHIP8cpu {
         i: 0x0,
@@ -406,16 +418,17 @@ fn main() {
         st: 0,
         clock: clockspeed,
         ins: [0x0; 4],
-        gfx: graphics,
-        kb: keyboard
     };
 
     // initialize rom from memory address $200
-
-    let mut rom =  match File::open(&args[0]) {
-        Err(why) => panic!("couldn't open {}: {}", &args[0], why),
-        Ok(file) => file,
-    };
+    let mut adr = 0x200;
+    for b in romfil.bytes(){
+        if b.is_err(){
+            panic!("File read error at {}", b.unwrap_err())
+        }
+        cpu.memory[adr] = b.unwrap();
+        adr += 1;
+    }
 
     // main program loop
     let mut cont = true;
@@ -433,7 +446,8 @@ fn main() {
         }
         //TODO -- Video & Audio updates
         for _ in 0..cycles{
-            cpu.cycle(); 
+            cpu.cycle(&mut graphics, &keyboard); 
+            graphics.update();
         }
         cycles = 0;
     }

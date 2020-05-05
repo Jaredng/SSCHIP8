@@ -3,6 +3,7 @@ name = "SSCHIP-8"
 version = "0.1.0"
 authors = ["JG"]
 edition = "2018"
+links = "pdcurses"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,3 +13,7 @@ libc = "0.2.0"
 
 [build-dependencies]
 bindgen = "0.53.2"
+
+[profile.dev]
+opt_level = 0
+debug = 2

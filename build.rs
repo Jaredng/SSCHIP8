@@ -4,12 +4,17 @@ use std::env;
 use std::path::PathBuf;
 
 
+
 fn main() {
+
+    println!("cargo:rustc-link-search=./lib/PDCurses-3.9/wincon");
+    println!("cargo:rustc-link-lib=pdcurses");
+
     println!("cargo:rerun-if-changed=wrapper.h");
 
     let bindings = bindgen::Builder::default().header("wrapper.h")
-            .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-            .generate().expect("Unable to generate bindings");
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .generate().expect("Unable to generate bindings");
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
 
