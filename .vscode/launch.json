@@ -14,7 +14,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true,
+            "console": "newExternalWindow",
             "sourceFileMap": {
                 "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
@@ -29,7 +29,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true,
+            "console": "newExternalWindow",
             "sourceFileMap": {
                 "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
@@ -39,12 +39,57 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/i686-pc-windows-msvc/debug/SSCHIP-8.exe",
-            "args": ["Q:/Code/emudev/SSCHIP-8/roms/programs/Keypad Test [Hap, 2006].ch8"
+            "args": ["altmode", "Q:/Code/emudev/SSCHIP-8/roms/programs/Keypad Test [Hap, 2006].ch8"
                     , "2>", "screen.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true,
+            "console": "newExternalWindow",
+            "sourceFileMap": {
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+            }
+        },
+        {
+            "name": "(Windows) Launch w/ Jumping XO",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/i686-pc-windows-msvc/debug/SSCHIP-8.exe",
+            "args": ["Q:/Code/emudev/SSCHIP-8/roms/programs/Jumping X and O [Harry Kleinberg, 1977].ch8"
+                    , "2>", "screen.txt"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "newExternalWindow",
+            "sourceFileMap": {
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+            }
+        },
+        {
+            "name": "(Windows) Launch w/ GoL",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/i686-pc-windows-msvc/debug/SSCHIP-8.exe",
+            "args": ["Q:/Code/emudev/SSCHIP-8/roms/programs/Life [GV Samways, 1980].ch8"
+                    , "2>", "screen.txt"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "newExternalWindow",
+            "sourceFileMap": {
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+            }
+        },
+        {
+            "name": "(Windows) Launch w/ newbreakout",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/i686-pc-windows-msvc/debug/SSCHIP-8.exe",
+            "args": ["Q:/Code/emudev/SSCHIP-8/roms/games/Breakout (Brix hack) [David Winter, 1997].ch8"
+                    , "2>", "screen.txt"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "newExternalWindow",
             "sourceFileMap": {
                 "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
@@ -58,7 +103,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true,
+            "console": "newExternalWindow",
             "sourceFileMap": {
                 "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }

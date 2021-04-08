@@ -1,3 +1,6 @@
+use crate::terminalinterface;
+use crate::sdlinterface;
+
 pub trait Interface {
     //Draw a sprite at coordinate (x, y) from the supplied data.
     //Sprite width is 8 pixels.
@@ -6,4 +9,6 @@ pub trait Interface {
     fn draw_sprite(&mut self, x:u8, y:u8, sprite:&[u8]) -> u8;
 
     fn clear_screen(&mut self) -> ();
+
+    fn delegate_impl(&mut self, ifterm: &dyn Fn(&mut terminalinterface::Tgfx) -> (), ifsdl: &dyn Fn(&mut sdlinterface::SDLgfx) -> ()) -> ();
 }

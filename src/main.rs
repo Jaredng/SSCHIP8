@@ -1,20 +1,17 @@
 //Snake case really doesn't make sense for how I'm naming processor functions.
 #![allow(non_snake_case)]
 
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::process::exit;
 use std::env;
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 use std::fs::File;
 use std::fs;
 use std::io::prelude::*;
-use std::error::Error;
 
 mod chip8gfx;
 mod chip8kb;
 mod terminalinterface;
+mod sdlinterface;
 
 extern crate rand;
 
@@ -53,6 +50,10 @@ pub struct CHIP8cpu{
     pub clock: u64,
     // current instruction in nibs
     pub ins: [u8; 4],
+    //CPU Mode --
+    //0x00: chip-8 spec
+    //0x01: alt shl/shr commands
+    pub mode: u8
 }
 
 impl CHIP8cpu {
@@ -89,9 +90,17 @@ impl CHIP8cpu {
                 0x3 => self.i8XY3(),
                 0x4 => self.i8XY4(),
                 0x5 => self.i8XY5(),
-                0x6 => self.i8XY6(),
+                0x6 => match self.mode {
+                    0x00 => self.i8XY6(),
+                    0x01 => self.i8XY6_alt(),
+                    _ => panic!("Unsupported mode!")
+                }
                 0x7 => self.i8XY7(),
-                0xE => self.i8XYE(),
+                0xE => match self.mode {
+                    0x00 => self.i8XYE(),
+                    0x01 => self.i8XYE_alt(),
+                    _ => panic!("Unsupported mode!")
+                } 
                 _ => self.instr_panic()
             }
             0x9 => self.i9XY0(),
@@ -144,8 +153,11 @@ impl CHIP8cpu {
 
     //Return from subroutine
     fn i00EE(&mut self){
-        self.pc = self.stack[self.sp as usize];
         self.sp -= 1;
+        if self.sp == 255 {
+            panic!("Stack Underflow with instr {:X?} at address {:X?}", self.ins, self.pc);
+        }
+        self.pc = self.stack[self.sp as usize];
     }
     
     //Execute machine language subroutine at 0xNNN
@@ -253,6 +265,13 @@ impl CHIP8cpu {
         self.v[self.ins[1] as usize] = self.v[self.ins[2] as usize] >> 1;
     }
 
+    // Store the value of register VX shifted right one bit in register VX¹
+    // Set register VF to the least significant bit prior to the shift
+    fn i8XY6_alt(&mut self){
+        self.v[0xF] = 0x01 & self.v[self.ins[1] as usize];
+        self.v[self.ins[1] as usize] = self.v[self.ins[1] as usize] >> 1;
+    }
+
     // Set register VX to the value of VY minus VX
     // Set VF to 00 if a borrow occurs
     // Set VF to 01 if a borrow does not occur
@@ -272,6 +291,13 @@ impl CHIP8cpu {
     fn i8XYE(&mut self){
         self.v[0xF] = (0x80 & self.v[self.ins[2] as usize]) >> 7;
         self.v[self.ins[1] as usize] = self.v[self.ins[2] as usize] << 1;
+    }
+
+    // Store the value of register VX shifted left one bit in register VX¹
+    // Set register VF to the most significant bit prior to the shift
+    fn i8XYE_alt(&mut self){
+        self.v[0xF] = (0x80 & self.v[self.ins[1] as usize]) >> 7;
+        self.v[self.ins[1] as usize] = self.v[self.ins[1] as usize] << 1;
     }
 
     //Skip the following instruction if the value of register VX is not equal to the value of register VY
@@ -350,7 +376,7 @@ impl CHIP8cpu {
     //the hexadecimal digit stored in register VX
     //TODO: Add these hex digits on init
     fn iFX29(&mut self){
-        
+        self.i = self.v[self.ins[1] as usize] as u16 * 5;
     }
 
     //Store the binary-coded decimal equivalent of the 
@@ -394,12 +420,35 @@ fn main() {
         println!("Missing rom file!");
         exit(6);
     }
-    let metadata = fs::metadata(&args[1]).unwrap();
-    if metadata.len() > 3584 || metadata.len() < 1 {
-        println!("File size issue!");
-        exit(6);
+
+    let commands = &args[1..args.len() - 1];
+
+    let mut mode = 0x00;
+
+    if commands.len() > 0 {
+        if commands[0] == "altmode" {
+            mode = 0x01;
+        }
+
     }
-    let mut romfil =  match File::open(&args[1]) {
+
+    if commands.len() > 1 {
+        if commands[1] == "sdl" {
+
+        }
+    }
+
+    let filname = &args[args.len() - 1];
+
+    match fs::metadata(filname) {
+        Err(why) => panic!("coulnd't read file metadata: {}", why),
+        Ok(metadata) => if metadata.len() > 3584 || metadata.len() < 1 {
+            println!("File size issue!");
+            exit(6);
+        }
+    };
+
+    let romfil =  match File::open(filname) {
         Err(why) => panic!("couldn't open {}: {}", &args[1], why),
         Ok(file) => file,
     };
@@ -418,7 +467,13 @@ fn main() {
         st: 0,
         clock: clockspeed,
         ins: [0x0; 4],
+        mode: mode
     };
+
+    // init default sprites
+    for i in 0..SPRITES.len() {
+        cpu.memory[i] = SPRITES[i];
+    }
 
     // initialize rom from memory address $200
     let mut adr = 0x200;
@@ -431,12 +486,11 @@ fn main() {
     }
 
     // main program loop
-    let mut cont = true;
     let mut cycles = 0;
     let mut spares = 0;
     let mut prev = Instant::now();
     let ticksize = 1000000 / clockspeed; //microseconds per clock
-    while cont {
+    loop {
         let cur = Instant::now();
         let dur = cur.saturating_duration_since(prev).as_micros() as u64;
         if dur + spares > ticksize {
@@ -453,3 +507,108 @@ fn main() {
     }
 
 }
+
+const SPRITES:[u8;80] = [
+    //0
+    0b11110000,
+    0b10010000,
+    0b10010000,
+    0b10010000,
+    0b11110000,
+    //1
+    0b00100000,
+    0b01100000,
+    0b00100000,
+    0b00100000,
+    0b01110000,
+    //2
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    //3
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    //4
+    0b10010000,
+    0b10010000,
+    0b11110000,
+    0b00010000,
+    0b00010000,
+    //5
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    //6
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    //7
+    0b11110000,
+    0b00010000,
+    0b00100000,
+    0b01000000,
+    0b01000000,
+    //8
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    //9
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    //A
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b10010000,
+    0b10010000,
+    //B
+    0b11100000,
+    0b10010000,
+    0b11100000,
+    0b10010000,
+    0b11100000,
+    //C
+    0b11110000,
+    0b10000000,
+    0b10000000,
+    0b10000000,
+    0b11110000,
+    //D
+    0b11100000,
+    0b10010000,
+    0b10010000,
+    0b10010000,
+    0b11100000,
+    //E
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    //F
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10000000,
+    0b10000000
+];
+
+//Rewrap function for Wrapping<T> if I decide to go with that. 
+//Probably just gonna use the nightly compiler tho.
+// fn rewrap<T,U>(Wrapping(t) : Wrapping<T>) -> Wrapping<U> where T: TryInto<U> {
+//     Wrapping(t.try_into().ok().unwrap())
+// }

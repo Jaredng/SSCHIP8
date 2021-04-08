@@ -9,6 +9,8 @@ fn main() {
 
     println!("cargo:rustc-link-search=./lib/PDCurses-3.9/wincon");
     println!("cargo:rustc-link-lib=pdcurses");
+    println!("cargo:rustc-link-search=./lib/SDL2/Release");
+    println!("cargo:rustc-link-lib=sdl2");
 
     println!("cargo:rerun-if-changed=wrapper.h");
 

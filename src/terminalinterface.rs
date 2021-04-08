@@ -5,8 +5,8 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 use std::collections::HashMap;
 use crate::chip8gfx;
-
 use crate::chip8kb;
+use crate::sdlinterface;
 
 const KEYBOARD_LAYOUT: [u8;16] = [0x1, 0x2, 0x3, 0xC, 0x4, 0x5, 0x6, 0xD, 0x7, 0x8, 0x9, 0xE, 0xA, 0x0, 0xB, 0xF];
 const DEFAULT_KEYBOARD: [char;16] = ['1','2','3','4','q','w','e','r','a','s','d','f','z','x','c','v'];
@@ -41,10 +41,12 @@ impl Tgfx {
                 unsafe {mvwaddch(self.win, y as i32, x as i32, if self.screen[y][x] == 0 {' ' as u32} else {('0' as u32)|0x00010000});}
             }
         }
-        unsafe {refresh()};
+        unsafe {
+            refresh();
+        };
     }
 
-    fn dbg_print_screen(&mut self){
+    fn dbg_print_screen(&self){
         for y in 0..self.screen.len() {
             for x in 0..self.screen[y].len() {
                 eprint!("{}", if self.screen[y][x] > 0 {"█"} else {"."});
@@ -82,6 +84,10 @@ impl chip8gfx::Interface for Tgfx {
         }
     }
 
+    fn delegate_impl(&mut self, ifterm: &dyn Fn(&mut Tgfx) -> (), ifsdl: &dyn Fn(&mut sdlinterface::SDLgfx) -> ()){
+        ifterm(self);
+    }
+
 }
 
 pub struct Tkb {
@@ -94,7 +100,7 @@ impl chip8kb::Interface for Tkb {
         //Return true if given key is down when function called. False otherwise.
         fn check_pressed(&self, key: u8) -> bool{
             
-            if key> 0xF {
+            if key > 0xF {
                 panic!("Invalid key checked: {:X?}", key) // This should never happen
             }
 
@@ -102,12 +108,22 @@ impl chip8kb::Interface for Tkb {
                 //TODO: Check if this works -- May not generate new keypress before next line?
                 //What if multiple keys pressed?
                 //Hmm...
+                let mut keypress = match wgetch(self.win) {
+                    -1 => -1,
+                    x => {
+                        while wgetch(self.win) == x {} //Consume all buffered repeats
+                        x
+                    }
+                };
                 flushinp();
-                let keypress = wgetch(self.win);
-                let keyID = self.fwdmap[&keypress];
-                if keyID == key {
-                    return true;
-                }
+                match self.fwdmap.get(&keypress) {
+                    None => (),
+                    Some(keyID) => {
+                        if *keyID == key {
+                            return true;
+                        }
+                    }
+                };
                 return false
             }
         }
