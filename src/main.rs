@@ -1,5 +1,6 @@
 //Snake case really doesn't make sense for how I'm naming processor functions.
 #![allow(non_snake_case)]
+#![feature(asm)]
 
 use std::process::exit;
 use std::env;
@@ -7,6 +8,7 @@ use std::time::{Instant};
 use std::fs::File;
 use std::fs;
 use std::io::prelude::*;
+use crate::chip8kb::Interface;
 
 mod chip8gfx;
 mod chip8kb;
@@ -54,10 +56,11 @@ pub struct CHIP8cpu{
     //0x00: chip-8 spec
     //0x01: alt shl/shr commands
     pub mode: u8
+    //Currently pressed keys
 }
 
 impl CHIP8cpu {
-    fn cycle(&mut self, gfx: &mut dyn chip8gfx::Interface, kb: &dyn chip8kb::Interface) -> bool {
+    fn cycle(&mut self, gfx: &mut dyn chip8gfx::Interface, kb: u16) -> bool {
         self.ticktimers();
         //TODO: Implement timer decrements
         self.ins[0] = (self.memory[self.pc as usize] >> 4) & 0xF;
@@ -331,16 +334,16 @@ impl CHIP8cpu {
 
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is pressed
-    fn iEX9E(&mut self, kb: &dyn chip8kb::Interface){
-        if kb.check_pressed(self.v[self.ins[1] as usize]) {
+    fn iEX9E(&mut self, kb: u16){
+        if (kb >> (self.v[self.ins[1] as usize]) & 0x1) == 1 {
             self.pc += 2;
         }
     }
 
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is not pressed
-    fn iEXA1(&mut self, kb: &dyn chip8kb::Interface){
-        if !kb.check_pressed(self.v[self.ins[1] as usize]) {
+    fn iEXA1(&mut self, kb: u16){
+        if !(kb >> (self.v[self.ins[1] as usize]) & 0x1) == 1 {
             self.pc += 2;
         }
     }
@@ -351,8 +354,13 @@ impl CHIP8cpu {
     }
 
     // Wait for a keypress and store the result in register VX
-    fn iFX0A(&mut self, kb: &dyn chip8kb::Interface){
-        self.v[self.ins[1] as usize] = kb.get_keypress();
+    fn iFX0A(&mut self, kb: u16){
+        if kb > 0 { // if keypress, store in VX
+            self.v[self.ins[1] as usize] = Self::countTrailingZeros(kb as u32) as u8;
+        } else { // otherwise decrement by 2
+            self.pc -= 2;
+        }
+
     }
 
     //Set the delay timer to the value of register VX
@@ -403,6 +411,41 @@ impl CHIP8cpu {
         for j in 0..(self.ins[1] as usize + 1)  {
             self.v[j] = self.memory[self.i as usize];
             self.i += 1;
+        }
+    }
+
+    //maximum efficiency.
+    fn countTrailingZeros(value: u32) -> u32{
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+        {
+            unsafe {
+                asm!(
+                    "rbit {0}, {0}",
+                    "clz  {0}, {0}",
+                    inout(reg) value,
+                );
+            }
+            return value;
+        }
+        #[cfg(any(target_arch = "x86_64"))]
+        {
+            unsafe {
+                asm!(
+                    "bsf {0}, {0}",
+                    inout(reg) value,
+                );
+            }
+            return value;
+        }
+        #[cfg(all(not(target_arch = "aarch64"), not(target_arch="arm"), not(target_arch = "x86_64")))]
+        {
+            if value == 0 {return 32};
+            const deBruijnSequence:[u32;32] = 
+            [
+                0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
+                31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+            ];
+            return deBruijnSequence[(((value & (0 - value)) * 0x077CB531u32) >> 27) as usize];
         }
     }
     
@@ -486,6 +529,7 @@ fn main() {
     }
 
     // main program loop
+    let mut keys;
     let mut cycles = 0;
     let mut spares = 0;
     let mut prev = Instant::now();
@@ -500,7 +544,8 @@ fn main() {
         }
         //TODO -- Video & Audio updates
         for _ in 0..cycles{
-            cpu.cycle(&mut graphics, &keyboard); 
+            keys = keyboard.update();
+            cpu.cycle(&mut graphics, keys); 
             graphics.update();
         }
         cycles = 0;

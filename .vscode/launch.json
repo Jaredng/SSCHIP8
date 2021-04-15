@@ -16,7 +16,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         },
         {
@@ -31,7 +31,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         },
         {
@@ -46,7 +46,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         },
         {
@@ -61,7 +61,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         },
         {
@@ -76,7 +76,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         },
         {
@@ -91,7 +91,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         },
         {
@@ -105,7 +105,7 @@
             "environment": [],
             "console": "newExternalWindow",
             "sourceFileMap": {
-                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
+                "c:\\rustc\\b8cedc00407a4c56a3bda1ed605c6fc166655447\\": "c:\\Users\\Jared\\.rustup\\toolchains\\nightly-x86_64-pc-windows-msvc\\lib\\rustlib\\src\\rust\\"
             }
         }
     ]

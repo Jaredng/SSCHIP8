@@ -17,3 +17,5 @@ bindgen = "0.53.2"
 [profile.dev]
 opt_level = 0
 debug = 2
+split-debuginfo = "packed"
+overflow-checks = false

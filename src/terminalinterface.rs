@@ -97,47 +97,22 @@ pub struct Tkb {
 }
 
 impl chip8kb::Interface for Tkb {
-        //Return true if given key is down when function called. False otherwise.
-        fn check_pressed(&self, key: u8) -> bool{
-            
-            if key > 0xF {
-                panic!("Invalid key checked: {:X?}", key) // This should never happen
-            }
-
-            unsafe { 
-                //TODO: Check if this works -- May not generate new keypress before next line?
-                //What if multiple keys pressed?
-                //Hmm...
-                let mut keypress = match wgetch(self.win) {
-                    -1 => -1,
-                    x => {
-                        while wgetch(self.win) == x {} //Consume all buffered repeats
-                        x
-                    }
-                };
-                flushinp();
+    fn update(&self) -> u16 {
+        let mut setkeys:u16 = 0;
+        let mut keypress = 0;
+        while keypress != -1 {
+            unsafe {
+                keypress = wgetch(self.win);
                 match self.fwdmap.get(&keypress) {
                     None => (),
                     Some(keyID) => {
-                        if *keyID == key {
-                            return true;
-                        }
+                        setkeys |= 0x1u16 << keyID;
                     }
-                };
-                return false
-            }
-        }
-
-        //Wait for the next keypress, then return its key ID
-        fn get_keypress(&self) -> u8{
-            unsafe {
-                let mut key = wgetch(self.win);
-                while !self.fwdmap.contains_key(&key) {
-                    key = wgetch(self.win);
                 }
-                return self.fwdmap[&key]
             }
         }
+        return setkeys;
+    }
 }
 
 /*
