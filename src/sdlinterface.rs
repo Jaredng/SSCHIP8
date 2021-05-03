@@ -24,8 +24,5 @@ impl chip8gfx::Interface for SDLgfx {
         
     }
 
-    fn delegate_impl(&mut self, ifterm: &dyn Fn(&mut terminalinterface::Tgfx) -> (), ifsdl: &dyn Fn(&mut SDLgfx) -> ()){
-        ifsdl(self);
-    }
 
 }

@@ -10,5 +10,4 @@ pub trait Interface {
 
     fn clear_screen(&mut self) -> ();
 
-    fn delegate_impl(&mut self, ifterm: &dyn Fn(&mut terminalinterface::Tgfx) -> (), ifsdl: &dyn Fn(&mut sdlinterface::SDLgfx) -> ()) -> ();
 }

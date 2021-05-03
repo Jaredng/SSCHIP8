@@ -14,6 +14,7 @@ mod chip8gfx;
 mod chip8kb;
 mod terminalinterface;
 mod sdlinterface;
+mod minimalkbinterface;
 
 extern crate rand;
 
@@ -343,7 +344,7 @@ impl CHIP8cpu {
     //Skip the following instruction if the key corresponding to the 
     //hex value currently stored in register VX is not pressed
     fn iEXA1(&mut self, kb: u16){
-        if !(kb >> (self.v[self.ins[1] as usize]) & 0x1) == 1 {
+        if (kb >> (self.v[self.ins[1] as usize]) & 0x1) != 1 {
             self.pc += 2;
         }
     }
@@ -440,12 +441,12 @@ impl CHIP8cpu {
         #[cfg(all(not(target_arch = "aarch64"), not(target_arch="arm"), not(target_arch = "x86_64")))]
         {
             if value == 0 {return 32};
-            const deBruijnSequence:[u32;32] = 
+            const DE_BRUIJN_SEQUENCE:[u32;32] = 
             [
                 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
                 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
             ];
-            return deBruijnSequence[(((value & (0 - value)) * 0x077CB531u32) >> 27) as usize];
+            return DE_BRUIJN_SEQUENCE[(((value & (0 - value)) * 0x077CB531u32) >> 27) as usize];
         }
     }
     
@@ -466,6 +467,7 @@ fn main() {
 
     let commands = &args[1..args.len() - 1];
 
+    //SHL/SHR use VY by default (VX = VY >> 1). Altmode ignores VY (VX = VX >> 1).
     let mut mode = 0x00;
 
     if commands.len() > 0 {
@@ -497,7 +499,8 @@ fn main() {
     };
 
     //Make init structure branch when time for SDL implementation
-    let (mut keyboard, mut graphics) = terminalinterface::termfact();
+    let mut graphics = terminalinterface::termgfxfact();
+    let keyboard = minimalkbinterface::minimalkb::init();
 
     let mut cpu = CHIP8cpu {
         i: 0x0,

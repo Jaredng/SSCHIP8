@@ -8,17 +8,22 @@ use crate::chip8gfx;
 use crate::chip8kb;
 use crate::sdlinterface;
 
-const KEYBOARD_LAYOUT: [u8;16] = [0x1, 0x2, 0x3, 0xC, 0x4, 0x5, 0x6, 0xD, 0x7, 0x8, 0x9, 0xE, 0xA, 0x0, 0xB, 0xF];
-const DEFAULT_KEYBOARD: [char;16] = ['1','2','3','4','q','w','e','r','a','s','d','f','z','x','c','v'];
+use chip8kb::VIRTUAL_KEYS;
+use chip8kb::DEFAULT_ASCII;
 
-pub fn termfact() -> (Tkb, Tgfx){
+pub fn termgfxfact() -> Tgfx{
     unsafe {
         let win : *mut WINDOW = initscr();
         cbreak();
         noecho();
         nodelay(win, true);
-        ( Tkb::init(win), Tgfx::init(win) )
+        resize_term(32, 64);
+        Tgfx::init(win)
     }
+}
+
+pub fn termkbfact(graphics: &Tgfx) -> Tkb{
+    Tkb::init(graphics.win)
 }
 
 pub struct Tgfx {
@@ -84,10 +89,6 @@ impl chip8gfx::Interface for Tgfx {
         }
     }
 
-    fn delegate_impl(&mut self, ifterm: &dyn Fn(&mut Tgfx) -> (), ifsdl: &dyn Fn(&mut sdlinterface::SDLgfx) -> ()){
-        ifterm(self);
-    }
-
 }
 
 pub struct Tkb {
@@ -127,14 +128,14 @@ Keyboard layout:
 impl Tkb {
     pub fn init(win: *mut WINDOW) -> Tkb {
         let backmap: HashMap<u8, Vec<::std::os::raw::c_int>> = 
-            KEYBOARD_LAYOUT.iter().cloned()
-            .zip(DEFAULT_KEYBOARD.iter()
+        VIRTUAL_KEYS.iter().cloned()
+            .zip(DEFAULT_ASCII.iter()
             .map(|&e| vec![e as ::std::os::raw::c_int]))
             .collect();
         let fwdmap: HashMap<::std::os::raw::c_int, u8> = 
-            DEFAULT_KEYBOARD.iter()
+        DEFAULT_ASCII.iter()
             .map(|&e| e as ::std::os::raw::c_int)
-            .zip(KEYBOARD_LAYOUT.iter().copied())
+            .zip(VIRTUAL_KEYS.iter().copied())
             .collect();
         let keyboard = Tkb{
             fwdmap: fwdmap,
