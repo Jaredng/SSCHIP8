@@ -416,7 +416,7 @@ impl CHIP8cpu {
     }
 
     //maximum efficiency.
-    fn countTrailingZeros(value: u32) -> u32{
+    fn countTrailingZeros(mut value: u32) -> u32{
         #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
         {
             unsafe {
