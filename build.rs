@@ -8,7 +8,7 @@ use std::path::PathBuf;
 fn main() {
 
     println!("cargo:rustc-link-search=./lib/PDCurses-3.9/wincon");
-    println!("cargo:rustc-link-lib=pdcurses");
+    println!("cargo:rustc-link-lib=static=pdcurses");
     println!("cargo:rustc-link-search=./lib/SDL2/Release");
     println!("cargo:rustc-link-lib=sdl2");
 

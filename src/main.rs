@@ -471,7 +471,7 @@ fn main() {
     let mut mode = 0x00;
 
     if commands.len() > 0 {
-        if commands[0] == "altmode" {
+        if commands[0] == "-alt" {
             mode = 0x01;
         }
 
