@@ -3,7 +3,6 @@ name = "SSCHIP-8"
 version = "0.1.0"
 authors = ["JG"]
 edition = "2018"
-links = "pdcurses"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,9 +10,10 @@ links = "pdcurses"
 rand = "0.7.3"
 libc = "0.2.0"
 keyboard_query = "0.1.0"
+pancurses = "0.16.1"
 
 [build-dependencies]
-bindgen = "0.53.2"
+# bindgen = "0.53.2"
 cargo-vcpkg = "0.1.5"
 vcpkg = "0.2.13"
 
@@ -29,11 +29,12 @@ default-features = false
 features = ["static-link","use-vcpkg"]
 
 [package.metadata.vcpkg]
-dependencies = ["ncurses"]
 # dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "sdl2-gfx", "sdl2-mixer"]
 git = "https://github.com/microsoft/vcpkg"
 # rev = "a0518036077baa4"
 branch = "master"
 
 [package.metadata.vcpkg.target]
-x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
+x86_64-pc-windows-msvc = { triplet = "x86-windows-static-md", install = ["sdl2"] }
+x86_64-apple-darwin = { install = ["ncurses", "sdl2"] }
+x86_64-unknown-linux-gnu = { install = ["ncurses", "sdl2"] }

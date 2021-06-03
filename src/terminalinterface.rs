@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+use pancurses::*;
 
 use std::collections::HashMap;
 use crate::chip8gfx;
@@ -12,30 +13,26 @@ use chip8kb::VIRTUAL_KEYS;
 use chip8kb::DEFAULT_ASCII;
 
 pub fn termgfxfact() -> Tgfx{
-    unsafe {
-        let win : *mut WINDOW = initscr();
-        cbreak();
-        noecho();
-        nodelay(win, true);
-        resize_term(32, 64);
-        Tgfx::init(win)
-    }
+    let win : Window = initscr();
+    cbreak();
+    noecho();
+    win.nodelay(true);
+    resize_term(32, 64);
+    Tgfx::init(win)
 }
 
 pub fn termkbfact(graphics: &Tgfx) -> Tkb{
-    Tkb::init(graphics.win)
+    Tkb::init(&graphics.win)
 }
 
 pub struct Tgfx {
-    pub win:*mut WINDOW,
+    pub win: Window,
     pub screen: [[u8;64];32]
 }
 
 impl Tgfx {
-    pub fn init(win: *mut WINDOW) -> Tgfx {
-        unsafe {
-            return Tgfx{win: win, screen: [[0;64];32]};
-        }
+    pub fn init(win: Window) -> Tgfx {
+        return Tgfx{win, screen: [[0;64];32]};
     }
 
     pub fn update(&self) {
@@ -43,12 +40,11 @@ impl Tgfx {
             for x in 0..self.screen[y].len() {
                 //TODO: Replace this with something more efficient.
                 //and less shitty.
-                unsafe {mvwaddch(self.win, y as i32, x as i32, if self.screen[y][x] == 0 {' ' as u32} else {('0' as u32)|0x00010000});}
+                //TODO: mvaddch now accepts a u64 instead of a u32. Figure out if this is correct.
+                self.win.mvaddch(y as i32, x as i32, if self.screen[y][x] == 0 {' ' as u64} else {('0' as u64)|0x00010000});
             }
         }
-        unsafe {
-            refresh();
-        };
+        self.win.refresh();
     }
 
     fn dbg_print_screen(&self){
@@ -91,24 +87,24 @@ impl chip8gfx::Interface for Tgfx {
 
 }
 
-pub struct Tkb {
+pub struct Tkb<'a> {
     pub fwdmap: HashMap<::std::os::raw::c_int, u8>,
     pub backmap: HashMap<u8, Vec<::std::os::raw::c_int>>,
-    pub win: *mut WINDOW
+    pub win: &'a Window
 }
 
-impl chip8kb::Interface for Tkb {
+impl chip8kb::Interface for Tkb<'_> {
     fn update(&self) -> u16 {
         let mut setkeys:u16 = 0;
         let mut keypress = 0;
         while keypress != -1 {
-            unsafe {
-                keypress = wgetch(self.win);
-                match self.fwdmap.get(&keypress) {
-                    None => (),
-                    Some(keyID) => {
-                        setkeys |= 0x1u16 << keyID;
-                    }
+            //TODO: Match the Option here: https://docs.rs/pancurses/0.2.0/pancurses/struct.Window.html#method.getch
+            let input : Option<Input> = self.win.getch();
+            keypress = 0;
+            match self.fwdmap.get(&keypress) {
+                None => (),
+                Some(keyID) => {
+                    setkeys |= 0x1u16 << keyID;
                 }
             }
         }
@@ -125,8 +121,8 @@ Keyboard layout:
 
 */
 
-impl Tkb {
-    pub fn init(win: *mut WINDOW) -> Tkb {
+impl Tkb<'_> {
+    pub fn init(win: &Window) -> Tkb {
         let backmap: HashMap<u8, Vec<::std::os::raw::c_int>> = 
         VIRTUAL_KEYS.iter().cloned()
             .zip(DEFAULT_ASCII.iter()
@@ -138,9 +134,9 @@ impl Tkb {
             .zip(VIRTUAL_KEYS.iter().copied())
             .collect();
         let keyboard = Tkb{
-            fwdmap: fwdmap,
-            backmap: backmap,
-            win: win
+            fwdmap,
+            backmap,
+            win
         };
         return keyboard;
     }

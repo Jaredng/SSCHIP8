@@ -1,10 +1,11 @@
-extern crate bindgen;
+// extern crate bindgen;
 extern crate vcpkg;
 
 use std::env;
 use std::path::PathBuf;
 use std::collections::HashSet;
 
+/*
 #[derive(Debug)]
 struct IgnoreMacros(HashSet<String>);
 
@@ -18,10 +19,11 @@ impl bindgen::callbacks::ParseCallbacks for IgnoreMacros {
             bindgen::callbacks::MacroParsingBehavior::Default
         }
     }
-}
+}*/
 
 fn main() {
 
+    /*
     let ignored_macros = IgnoreMacros(
         vec![
             "FP_INFINITE".into(),
@@ -33,30 +35,37 @@ fn main() {
         ]
         .into_iter()
         .collect(),
-    );
+    );*/
 
     println!("cargo:rerun-if-changed=wrapper.h");
 
-    vcpkg::Config::new()
-        .emit_includes(true)
-        .find_package("ncurses")
-        .unwrap();
+    // Windows builds depend on PDCurses, which is built by the pancurses crate.
+    // Unix builds depend on ncurses, which we need to build ourselves.
+    if(env::var("CARGO_CFG_UNIX").is_ok()) {
+        vcpkg::Config::new()
+            .emit_includes(true)
+            .find_package("ncurses")
+            .unwrap();
+    }
 
     vcpkg::Config::new()
         .emit_includes(true)
         .find_package("sdl2")
         .unwrap();
 
+    /*
     let bindings = bindgen::Builder::default().header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .parse_callbacks(Box::new(ignored_macros))
         .rustfmt_bindings(true)
         .clang_arg("-Itarget/vcpkg/installed/x64-linux/include/")
         .generate().expect("Unable to generate bindings");
+    
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     bindings.write_to_file(out_path.join("bindings.rs"))
             .expect("Couldn't write to bindings!");
+    */
 
 }
