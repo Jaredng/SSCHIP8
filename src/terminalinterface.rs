@@ -41,7 +41,7 @@ impl Tgfx {
                 //TODO: Replace this with something more efficient.
                 //and less shitty.
                 //TODO: mvaddch now accepts a u64 instead of a u32. Figure out if this is correct.
-                self.win.mvaddch(y as i32, x as i32, if self.screen[y][x] == 0 {' ' as u64} else {('0' as u64)|0x00010000});
+                self.win.mvaddch(y as i32, x as i32, char::from_u32(if self.screen[y][x] == 0 {' ' as u32} else {('0' as u32)|0x00010000}).unwrap());
             }
         }
         self.win.refresh();
